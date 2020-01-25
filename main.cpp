@@ -14,6 +14,7 @@
 #include "XRF.h"
 #include "MST.h"
 #include "parsing.h"
+#include "tableViewExport.h"
 
 
 #define MAX_DEBUG_RECORDS 100000
