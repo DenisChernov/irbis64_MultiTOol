@@ -9,8 +9,7 @@
 #include "MST.h"
 #include "XRF.h"
 
-MST::MST(std::string path) {
-    _path = path;
+MST::MST() {
 }
 
 std::ifstream MST::loadFile(const std::string& path) {

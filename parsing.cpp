@@ -91,7 +91,7 @@ bool parsing::isYear(const std::string &year) {
 }
 
 parsing::parsing() {
-    mst = new MST("");
+    mst = new MST();
 }
 
 int parsing::getCurYear() const {

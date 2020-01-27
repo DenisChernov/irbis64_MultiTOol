@@ -18,7 +18,7 @@
 
 class MST {
 private:
-    std::string _path;
+    //std::string _path;
 
 public:
     struct mainRecord {
@@ -139,7 +139,7 @@ public:
         REREG   = 52
     };
 
-    MST(std::string path);
+    MST();
 
     std::ifstream loadFile(const std::string& path);
     std::ofstream loadFileWrite(const std::string& path);
