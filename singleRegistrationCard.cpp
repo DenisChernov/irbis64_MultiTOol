@@ -21,8 +21,6 @@ void singleRegistrationCard::getERK() {
     std::string division;
     parsing::map__registeredFilials regInFilials = parsing::map__registeredFilials();
 
-    std::cout << bdOper->getParsedRecords().size() << std::endl;
-
     for (auto &it: bdOper->getParsedRecords()) {
         for (auto &recordIt: it) {
             switch (recordIt.first) {

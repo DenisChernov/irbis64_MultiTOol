@@ -102,7 +102,7 @@ void parsing::setCurYear(int curYear) {
     parsing::curYear = curYear;
 }
 
-parsing::parsing(int year) {
+parsing::parsing(uint32_t year) {
     setCurYear(year);
 }
 

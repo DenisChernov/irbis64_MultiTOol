@@ -17,7 +17,7 @@ private:
      */
     uint32_t lastYear;
 public:
-    uint32_t getLastYear() const;
+    [[nodiscard]] uint32_t getLastYear() const;
 
 public:
     void setLastYear();

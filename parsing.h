@@ -25,7 +25,7 @@ public:
     typedef std::map<std::string, uint32_t> map__registeredFilials;
 
     parsing();
-    parsing(int);
+    explicit parsing(uint32_t);
 
     bool regLastYears(const int &, const std::vector<std::string>&);
     bool reRegLastYears(const std::vector<std::string>&);
