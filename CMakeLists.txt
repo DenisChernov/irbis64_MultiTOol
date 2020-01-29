@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 include_directories("OpenXLSX/src")
 link_directories(OpenXLSX/lib)
 
-add_executable(irbis64_MultiTOol main.cpp XRF.cpp XRF.h MST.cpp MST.h parsing.cpp parsing.h tableViewExport.cpp tableViewExport.h singleRegistrationCard.cpp singleRegistrationCard.h fileStarter.cpp fileStarter.h)
+add_executable(irbis64_MultiTOol main.cpp XRF.cpp XRF.h MST.cpp MST.h parsing.cpp parsing.h tableViewExport.cpp tableViewExport.h singleRegistrationCard.cpp singleRegistrationCard.h fileStarter.cpp fileStarter.h dailyStats.cpp dailyStats.h tags.h)
 target_link_libraries(irbis64_MultiTOol "libOpenXLSX.so")
 
 

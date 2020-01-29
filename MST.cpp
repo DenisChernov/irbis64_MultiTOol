@@ -326,7 +326,6 @@ std::map<uint32_t, std::vector<std::string>> MST::getUserByOffset_master(uint32_
     return tag;
 }
 
-
 void MST::markUserDeleted(uint32_t offset, std::ifstream &file) {
     if (file) {
         file.seekg(offset);

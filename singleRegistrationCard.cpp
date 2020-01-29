@@ -8,7 +8,7 @@ singleRegistrationCard::singleRegistrationCard(std::string path, std::string bdN
     std::cout << "Подсчет ЕРК." << std::endl;
 
     setLastYear();
-    bdOper = new fileStarter(path);
+    bdOper = new fileStarter(path, fileStarter::READ_ALL);
 }
 
 singleRegistrationCard::~singleRegistrationCard() {

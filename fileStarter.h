@@ -35,6 +35,10 @@ private:
     */
     std::vector<std::map<uint32_t, std::vector<std::string>>> parsedRecords;
 public:
+    enum mode {
+        READ_ALL, READ_ONE
+    };
+
     const std::vector<std::map<uint32_t, std::vector<std::string>>> &getParsedRecords() const;
 
 private:
@@ -53,6 +57,9 @@ private:
 
     std::ifstream fileMST;
     std::ifstream fileCrossLink;
+    MST::userRecord userRecord;
+public:
+    const MST::userRecord &getUserRecord() const;
 
 public:
     void setMaxMfn(const uint32_t &maxMfn);
@@ -61,10 +68,37 @@ public:
 
 public:
 
-    fileStarter(const std::string& filespath);
+    fileStarter(const std::string& filespath, mode operationMode);
     virtual ~fileStarter();
 
     uint32_t readBD();
+    std::vector<XRF::crossLinks> loadXRF();
+
+    /**
+     * Возврат выборочной записи из БД.
+     * Используется массив перекрестных ссылок, полученный при общем парсинге базы
+     *
+     * @param mfn
+     * @return record
+     */
+    std::vector<std::string> readRecord(uint32_t mfn);
+
+    /**
+     * Заполняется переменная userRecord с записью о читателе.
+     * Используется массив перекрестных ссылок, полученный ручной загрузкой
+     *
+     * @param mfn
+     * @param links
+     * @return
+     */
+    void readRecord(uint32_t mfn, std::vector<XRF::crossLinks> links);
+
+    /**
+     * Вывод в консоль записи содержащейся в userRecord
+     */
+    void printRecord();
+
+    std::string userCategory(std::string);
 };
 
 

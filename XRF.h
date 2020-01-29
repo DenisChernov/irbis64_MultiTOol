@@ -32,7 +32,6 @@ public:
     uint32_t getOffset(const crossLinks& xrf);
 
     void markUserDeleted_master(uint32_t, std::fstream&);
-
 };
 
 #endif //IRBIS64BOOKIMPORT_XRF_H

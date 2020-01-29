@@ -16,11 +16,11 @@
 #include "parsing.h"
 #include "tableViewExport.h"
 #include "singleRegistrationCard.h"
-
+#include "dailyStats.h"
 
 const size_t CH_B_FIELD = 30;
 
-enum params {CH_B = 1, ERK = 2, REMOVE = 3, ERROR = 0};
+enum params {CH_B = 1, ERK = 2, REMOVE = 3, DAILY_STATS = 4, ERROR = 0};
 
 /**
  *
@@ -66,8 +66,6 @@ int main(int argc, char* argv[]) {
 //            break;
 //        }
         case ERK: {
-
-
 //            getERK(lastYear - 1, parsedRecords);
             singleRegistrationCard* erk = new singleRegistrationCard(filePathBD, bdName);
             erk->getERK();
@@ -77,6 +75,9 @@ int main(int argc, char* argv[]) {
 //            getCountCH_B(parsedRecords);
 //            break;
 //        }
+        case DAILY_STATS: {
+            dailyStats* dayStatistics = new dailyStats(filePathBD);
+        }
         case ERROR: {
 
 //            fileRW.close();
@@ -103,12 +104,13 @@ params parseParams(int argc, char* argv[]) {
             return CH_B;
         } else if (strncmp(argv[1], "erk", 3) == 0) {
             return ERK;
-        }  else if (strncmp(argv[1], "remove", 6) == 0) {
+        } else if (strncmp(argv[1], "remove", 6) == 0) {
             std::cout << "Удаление читаталей, непосещавших библиотеку более 3х лет" << std::endl;
             return REMOVE;
-        } else {
-            return ERROR;
+        } else if (strncmp(argv[1], "daily-stat", 10) == 0) {
+            return DAILY_STATS;
         }
+        return ERROR;
     } else {
         std::cout << "Не указаны параметры для работы приложения" << std::endl;
         std::cout << "Необходимо: " << argv[0] << " МЕТОД_РАБОТЫ [ПУТЬ_К_БАЗЕ БАЗА]" << std::endl;

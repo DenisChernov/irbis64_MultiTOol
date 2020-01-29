@@ -21,6 +21,8 @@ private:
     //std::string _path;
 
 public:
+    typedef std::map<uint32_t, std::vector<std::string>> userRecord;
+
     struct mainRecord {
         /**
          * 32 CTLMFN – резерв;

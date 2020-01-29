@@ -5,7 +5,7 @@
 #include <cstdint>
 #include "fileStarter.h"
 
-fileStarter::fileStarter(const std::string& filespath) {
+fileStarter::fileStarter(const std::string& filespath, mode operationMode) {
     mstFile = filespath + ".MST";
     xrfFile = filespath + ".XRF";
 
@@ -18,11 +18,25 @@ fileStarter::fileStarter(const std::string& filespath) {
     if (fileMST.is_open() && fileCrossLink.is_open()) {
         std::cout << "файл открыт: "<< mstFile << std::endl;
         std::cout << "файл открыт: "<< xrfFile << std::endl;
-        
-        std::cout << "max MFN: " << readBD() << std::endl;
 
-        fileMST.close();
-        fileCrossLink.close();
+        switch (operationMode) {
+            case READ_ALL: {
+                std::cout << "max MFN: " << readBD() << std::endl;
+                break;
+            }
+            case READ_ONE: {
+                MST::mainRecord mstMasterRecord = mst->readMainRecord(&fileMST);
+                setMaxMfn(mst->getMaxMFN(mstMasterRecord));
+                std::cout << "max MFN: " << getMaxMFN() << std::endl;
+                break;
+            }
+            default: {
+                std::cout << "don't understant how to start bdOperation" << std::endl;
+                break;
+            }
+        }
+//        fileMST.close();
+//        fileCrossLink.close();
     } else {
         if (!fileMST.is_open()) {
             perror("Ошибка открытия файла типа MST");
@@ -33,7 +47,10 @@ fileStarter::fileStarter(const std::string& filespath) {
     }
 }
 
-fileStarter::~fileStarter() = default;
+fileStarter::~fileStarter() {
+    fileMST.close();
+    fileCrossLink.close();
+};
 
 uint32_t fileStarter::readBD() {
     MST::mainRecord mstMasterRecord = mst->readMainRecord(&fileMST);
@@ -135,4 +152,59 @@ const uint32_t &fileStarter::getMaxMFN() const {
 
 const std::vector<std::map<uint32_t, std::vector<std::string>>> &fileStarter::getParsedRecords() const {
     return parsedRecords;
+}
+
+std::vector<XRF::crossLinks> fileStarter::loadXRF() {
+    std::vector<XRF::crossLinks> xrfCrossLinks;
+
+    fileCrossLink.seekg(0);
+    for (uint32_t i = 1; i < maxMFN; i++) {
+        xrfCrossLinks.push_back(xrf->readXRF(&fileCrossLink));
+    }
+
+    return xrfCrossLinks;
+}
+
+std::vector<std::string> fileStarter::readRecord(uint32_t mfn) {
+    std::vector<std::string> record;
+
+    /**
+     * Если MFN вне диапазона, то возврат пустой записи
+     */
+    if (mfn > 0 && mfn < getMaxMFN()) {
+
+        return record;
+    }
+
+    return std::vector<std::string>();
+}
+
+void fileStarter::readRecord(uint32_t mfn, std::vector<XRF::crossLinks> links) {
+    /**
+     * Если MFN вне диапазона, то читаем запись
+     */
+    if (mfn > 0 && mfn < getMaxMFN()) {
+        std::cout << links.size() << std::endl;
+        uint32_t offset = xrf->getOffset(links.at(mfn));
+        std::cout << "offset: " << offset << std::endl;
+        userRecord = mst->getUserByOffset(offset, fileMST);
+    }
+}
+
+void fileStarter::printRecord() {
+    int fieldNumber;
+    if (!userRecord.empty()) {
+        for (const auto& user: userRecord) {
+            std::cout << "tag: " << user.first << std::endl;
+            fieldNumber = 0;
+            for (const auto& field: user.second) {
+                ++fieldNumber;
+                std::cout << "\t" << fieldNumber << ": " << field << std::endl;
+            }
+        }
+    }
+}
+
+const MST::userRecord &fileStarter::getUserRecord() const {
+    return userRecord;
 }
