@@ -147,6 +147,15 @@ std::string parsing::getFieldIndexValue(MST::fieldIndexes field, const std::stri
             }
             break;
         }
+        case MST::VISIT_FILIAL: {
+            std::regex re("\\^([Vv])([^\\^]*)");
+            std::smatch match;
+
+            if (std::regex_search(str, match, re)) {
+                return match[2];
+            }
+            break;
+        }
     }
     return std::string();
 }

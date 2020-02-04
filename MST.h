@@ -133,7 +133,10 @@ public:
 
     enum fieldIndexes {
             REG_DATE = 'D',
-            REG_DIVISION = 'C'
+            REG_DIVISION = 'C',
+            VISIT_DATE_GET = 'D',
+            VISIT_DATE_PUT = 'F',
+            VISIT_FILIAL = 'V'
     };
 
     enum fieldNumbers {

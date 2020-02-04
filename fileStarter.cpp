@@ -2,10 +2,11 @@
 // Created by chernovda on 26.01.2020.
 //
 
-#include <cstdint>
 #include "fileStarter.h"
 
 fileStarter::fileStarter(const std::string& filespath, mode operationMode) {
+    associateFilials(filespath);
+
     mstFile = filespath + ".MST";
     xrfFile = filespath + ".XRF";
 
@@ -184,9 +185,7 @@ void fileStarter::readRecord(uint32_t mfn, std::vector<XRF::crossLinks> links) {
      * Если MFN вне диапазона, то читаем запись
      */
     if (mfn > 0 && mfn < getMaxMFN()) {
-        std::cout << links.size() << std::endl;
         uint32_t offset = xrf->getOffset(links.at(mfn));
-        std::cout << "offset: " << offset << std::endl;
         userRecord = mst->getUserByOffset(offset, fileMST);
     }
 }
@@ -207,4 +206,44 @@ void fileStarter::printRecord() {
 
 const MST::userRecord &fileStarter::getUserRecord() const {
     return userRecord;
+}
+
+void fileStarter::associateFilials(std::string filepath) {
+    std::regex re("(.*/)");
+    std::smatch match;
+    if (std::regex_search(filepath, match, re)) {
+        filepath = match[1];
+
+#ifdef __linux__
+// Смена кодировки у файла со списком филиалов
+        std::string convertCommand = "iconv -f CP1251 -t UTF8 " + filepath + "MHR.MNU > " + filepath + "MHR.MNU.LINUX";
+        system(convertCommand.c_str());
+        filepath += "MHR.MNU.LINUX";
+#else
+        filepath += "MHR.MNU";
+#endif
+        std::ifstream fileMHR(filepath, std::ios::in);
+        if (fileMHR.is_open()) {
+            std::string line;
+            int index = 1;
+            while (getline(fileMHR, line)) {
+                // Удаляем символ переноса строки
+                line.erase(line.length()-1, 1);
+                filials.insert(std::pair(static_cast<filialName>(index), line));
+                ++index;
+                getline(fileMHR, line);
+            }
+            fileMHR.close();
+        }
+    }
+    filialTitle(filialName::F_01_IO);
+}
+
+std::string fileStarter::filialTitle(fileStarter::filialName filial) {
+    for (auto & it: filials) {
+        if (it.first == filial) {
+            return it.second;
+        }
+    }
+    return std::string();
 }
