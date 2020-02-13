@@ -5,7 +5,6 @@
 //
 
 
-#include <jmorecfg.h>
 #include "MST.h"
 #include "XRF.h"
 

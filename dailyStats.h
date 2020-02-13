@@ -23,6 +23,12 @@
 
 class dailyStats {
 public:
+    struct lastFieldDataVisitedFilial {
+        size_t lastParsedIndex = 0;
+        bool hasVariantTOParse = true;
+        bool foundLastIteration = false;
+    };
+
     struct structDailyStat {
         // WORK_TYPES
         size_t ITR = 0;
@@ -107,12 +113,18 @@ public:
         std::vector<AGE> age;
     };
 
+    enum WORK_MODE {
+        DAY,
+        MONTH
+    };
+
     typedef std::map<WORK_TYPES, std::string> mapWorkTypes;
     typedef std::map<AGE, std::string> mapAgeTypes;
     typedef std::map<EDU, std::string> mapEduTypes;
 
 
     fileStarter* bdOper;
+    lastFieldDataVisitedFilial lastData;
 
     explicit dailyStats(const std::string& path);
     virtual ~dailyStats();
@@ -129,6 +141,7 @@ public:
     AGE userAgeType(const std::string& ageType);
 
 private:
+    parsing* parse;
     mapWorkTypes userWorkTypeList;
     mapAgeTypes userAgeTypeList;
     mapEduTypes userEduTypeList;
@@ -150,9 +163,19 @@ public:
      * Дата и филиал берутся из соответствующих приватных переменных
      *
      * @param visitField - массив посещений
-     * @return bool
+     * @return lastFieldDataVisitedFilial
      */
-    bool visitedFilial(const std::vector<std::string>& visitField);
+    lastFieldDataVisitedFilial visitedFilial(const std::vector<std::string>& visitField);
+
+    /**
+     * Заполнение табличного файла данными
+     * Полностью затирает предыдущие значения новыми
+     * В качестве листа используется Sheet1
+     * После заполнения, необходима ручная правка любой ячейки, для пересчета формул. Баг OpenXLSX
+     */
+    void exportTableFile(const std::string& path);
+
+
 private:
 
     void fillUserWorkTypeList();
@@ -160,7 +183,8 @@ private:
     void fillUserAgeTypeList();
     static std::string currentData();
 
-
+    std::vector<int> prepareIDsForTest_day();
+    std::vector<int> prepareIDsForParsing(WORK_MODE);
     void makeTest();
 };
 
