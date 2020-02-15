@@ -178,3 +178,39 @@ std::vector<std::string> parsing::regRegFilials(uint32_t, std::vector<std::strin
 bool parsing::notInArray(std::string value, map__registeredFilials &array) {
     return array.find(value) == array.end();
 }
+
+bool parsing::yearMonthEqual(const std::string& yearMonth, const std::string& date) {
+    std::smatch match;
+
+    if (bookOnHands(date)) {
+        std::regex re("\\^([Ff])([^\\^]*)");
+        if (std::regex_search(date, match, re)) {
+            std::string result = match[2];
+            if (result.compare(0, 6, yearMonth) == 0) {
+                return true;
+            }
+        }
+    }
+
+    std::regex re("\\^([Dd])([^\\^]*)");
+    if (std::regex_search(date, match, re)) {
+        std::string result = match[2];
+        if (result.compare(0, 6, yearMonth) == 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool parsing::bookOnHands(const std::string& field) {
+    std::regex re("\\^([Ff])([^\\^]*)");
+    std::smatch match;
+    if (std::regex_search(field, match, re)) {
+        std::string result = match[2];
+        if (strncmp(result.c_str(), "******", 6) == 0) {
+            return true;
+        }
+    }
+    return false;
+}

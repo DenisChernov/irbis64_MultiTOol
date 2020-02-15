@@ -29,8 +29,9 @@ dailyStats::dailyStats(const std::string &path) {
 
     setSearchingFilial(fileStarter::F_24_IO);
 
-    setSearchingDate("20191020");
+    setSearchingDate("20191001");
     bdOper = new fileStarter(path, fileStarter::READ_ONE);
+//    bdOper = new fileStarter(path, fileStarter::READ_ALL);
     prepareIDsForParsing(WORK_MODE::MONTH);
 
 
@@ -77,7 +78,6 @@ dailyStats::~dailyStats() = default;
 dailyStats::userBIO dailyStats::fillUserData(const MST::userRecord &user) {
     if (!user.empty()) {
         userBIO visitor{};
-
         for (const auto &tag: user) {
             switch (tag.first) {
                 case TAGS::AGE : {
@@ -205,33 +205,20 @@ std::string dailyStats::currentData() {
     return ss.str();
 }
 
-dailyStats::lastFieldDataVisitedFilial dailyStats::visitedFilial(const std::vector<std::string> &visitField) {
-//    std::cout << "search in: " << getSearchingDate() << std::endl << "index: " << lastData.lastParsedIndex << std::endl;
-    auto field = visitField.end() - 1;
-    if (lastData.lastParsedIndex > 0) {
-        std::advance(field, lastData.lastParsedIndex - visitField.size());
-    }
-    lastData.foundLastIteration = false;
-    while (field >= visitField.begin()) {
-//        std::cout << "field: " << *field << std::endl;
-        if (parse->getFieldIndexValue(MST::fieldIndexes::VISIT_DATE_GET, *field) == getSearchingDate()) {
+bool dailyStats::visitedFilial(const std::vector<std::string> &visitField) {
+//    std::cout << "search in: " << getSearchingDate() << std::endl;
+
+    for (const auto& field: visitField) {
+        if (parse->getFieldIndexValue(MST::fieldIndexes::VISIT_DATE_GET, field) == getSearchingDate()) {
 //            std::cout << "day equal" << std::endl;
 //            std::cout << *field << std::endl;
-            if (parse->getFieldIndexValue(MST::fieldIndexes::VISIT_FILIAL, *field) == bdOper->filialTitle(getSearchingFilial())) {
+            if (parse->getFieldIndexValue(MST::fieldIndexes::VISIT_FILIAL, field) == bdOper->filialTitle(getSearchingFilial())) {
 //                std::cout << "filial equal" << std::endl;
-                lastData.lastParsedIndex = field - visitField.begin();
-                lastData.foundLastIteration = true;
-                return lastData;
+                return true;
             }
-        } else if (parse->getFieldIndexValue(MST::fieldIndexes::VISIT_DATE_GET, *field) < getSearchingDate()) {
-            lastData.foundLastIteration = false;
-            lastData.lastParsedIndex = field - visitField.begin() + 1;
-            return lastData;
         }
-
-        --field;
     }
-    return lastFieldDataVisitedFilial();
+    return false;
 }
 
 void dailyStats::makeTest() {
@@ -437,7 +424,8 @@ void dailyStats::makeTest() {
 
 std::vector<int> dailyStats::prepareIDsForParsing(dailyStats::WORK_MODE workMode) {
     std::vector<int> ids = {
-//            23
+//            431, 622, 939, 1560, 1732, 6561, 9842, 9873, 14230, 14236, 14481, 14931, 23061, 27928,  32495, 36339, 43179, 44133, 46998, 56338
+//            27928
             23, 46, 49, 57, 113, 170, 179, 205, 244, 248, 266, 291, 350, 352, 389, 410, 418, 423, 431, 440, 441, 446,
             457, 481, 489, 497, 544, 567, 587, 622, 644, 649, 660, 673, 700, 704, 719, 727, 736, 740, 799, 817, 819,
             864, 897, 909, 915, 939, 944, 991, 1021, 1029, 1044, 1047, 1072, 1087, 1090, 1140, 1162, 1169, 1191, 1203,
@@ -571,11 +559,11 @@ std::vector<int> dailyStats::prepareIDsForParsing(dailyStats::WORK_MODE workMode
 //            int lastID = 0;
             for (auto &id: ids) { // перебираем каждого пользователя
                 bdOper->readRecord(id, bdOper->loadXRF());
+                std::vector<std::string> visits = prepareFieldVisitsByMonth(getSearchingDate().substr(0, 6));
 //                bdOper->printRecord();
+//                for (auto record: bdOper->getParsedRecords()) {
+
                 std::cout << "parsing: " << id << std::endl;
-                lastData.lastParsedIndex = 0;
-                lastData.hasVariantTOParse = true;
-                lastData.foundLastIteration = false;
                 for (size_t day = 31; day >= 1; day--) { // на проверке каждый день в обратном порядке
                     setSearchingDate(baseDate + (day < 10 ? "0" : "") + std::to_string(day));
 //                    std::cout << "parsing user for: " << getSearchingDate() << std::endl;
@@ -586,160 +574,157 @@ std::vector<int> dailyStats::prepareIDsForParsing(dailyStats::WORK_MODE workMode
 
                         /**
                          * TODO: Возврат из функции:
-                         *      1. индекс строки, в которой был найден день
-                         *      2. имеет ли смысл искать дальше, или в оставшихся элементах массива, дата меньше чем первое число месяца
+                         *     -  1. индекс строки, в которой был найден день
+                         *     -  2. имеет ли смысл искать дальше, или в оставшихся элементах массива, дата меньше чем первое число месяца
                          */
 
-                        if (visitedFilial(bdOper->getUserRecord().at(TAGS::VISIT)).lastParsedIndex > 0) {
-                            if (lastData.foundLastIteration) {
-                                switch (fillUserData(bdOper->getUserRecord()).work) {
-                                    case WORK_TYPES::ITR: {
-                                        dailyStatistics[getSearchingDate()].ITR++;
+                        if (visitedFilial(visits)) {
+//                            if (getSearchingDate() == "20191021") {
+//                                std::cout << "фамилия: " << bdOper->getUserRecord().at(TAGS::LAST_NAME).front().c_str() << std::endl;
+//                            }
+                            switch (fillUserData(bdOper->getUserRecord()).work) {
+                                case WORK_TYPES::ITR: {
+                                    dailyStatistics[getSearchingDate()].ITR++;
+                                    break;
+                                }
+                                case WORK_TYPES::FINANCE: {
+                                    dailyStatistics[getSearchingDate()].FINANCE++;
+                                    break;
+                                }
+                                case WORK_TYPES::DOCTOR: {
+                                    dailyStatistics[getSearchingDate()].DOCTOR++;
+                                    break;
+                                }
+                                case WORK_TYPES::TEACHER: {
+                                    dailyStatistics[getSearchingDate()].TEACHER++;
+                                    break;
+                                }
+                                case WORK_TYPES::LAWYER: {
+                                    dailyStatistics[getSearchingDate()].LAWYER++;
+                                    break;
+                                }
+                                case WORK_TYPES::SPECIAL_PROF: {
+                                    dailyStatistics[getSearchingDate()].SPECIAL_PROF++;
+                                    break;
+                                }
+                                case WORK_TYPES::WORKER: {
+                                    dailyStatistics[getSearchingDate()].WORKER++;
+                                    break;
+                                }
+                                case WORK_TYPES::EMPLOYEE: {
+                                    dailyStatistics[getSearchingDate()].EMPLOYEE++;
+                                    break;
+                                }
+                                case WORK_TYPES::OTHER: {
+                                    dailyStatistics[getSearchingDate()].OTHER++;
+                                    break;
+                                }
+                                case WORK_TYPES::HIGH_EDU: {
+                                    dailyStatistics[getSearchingDate()].HIGH_EDU++;
+                                    break;
+                                }
+                                case WORK_TYPES::MIDDLE_EDU: {
+                                    dailyStatistics[getSearchingDate()].MIDDLE_EDU++;
+                                    break;
+                                }
+                                case WORK_TYPES::MAIN_EDU: {
+                                    dailyStatistics[getSearchingDate()].MAIN_EDU++;
+                                    break;
+                                }
+                                case WORK_TYPES::BEGINNING_EDU: {
+                                    dailyStatistics[getSearchingDate()].BEGINNING_EDU++;
+                                    break;
+                                }
+                                default: {
+                                    break;
+                                }
+                            }
+
+                            switch (fillUserData(bdOper->getUserRecord()).edu) {
+                                case EDU::HIGH: {
+                                    dailyStatistics[getSearchingDate()].HIGH++;
+                                    break;
+                                }
+                                case EDU::MIDDLE: {
+                                    dailyStatistics[getSearchingDate()].MIDDLE++;
+                                    break;
+                                }
+                                case EDU::BEGINNING_PROF: {
+                                    dailyStatistics[getSearchingDate()].BEGINNING_PROF++;
+                                    break;
+                                }
+                                case EDU::MAIN_FULL: {
+                                    dailyStatistics[getSearchingDate()].MAIN_FULL++;
+                                    break;
+                                }
+                                case EDU::MAIN: {
+                                    dailyStatistics[getSearchingDate()].MAIN++;
+                                    break;
+                                }
+                                case EDU::BEGINNING: {
+                                    dailyStatistics[getSearchingDate()].BEGINNING++;
+                                    break;
+                                }
+                                case EDU::PRESCHOOL: {
+                                    dailyStatistics[getSearchingDate()].PRESCHOOL++;
+                                    break;
+                                }
+                                case EDU::DISTANT: {
+                                    dailyStatistics[getSearchingDate()].DISTANT++;
+                                    break;
+                                }
+                                default: {
+                                    break;
+                                }
+                            }
+
+                            for (auto age: fillUserData(bdOper->getUserRecord()).age) {
+                                switch (age) {
+                                    case AGE::BEFORE_14: {
+                                        dailyStatistics[getSearchingDate()].BEFORE_14++;
                                         break;
                                     }
-                                    case WORK_TYPES::FINANCE: {
-                                        dailyStatistics[getSearchingDate()].FINANCE++;
+                                    case AGE::YOUTH: {
+                                        dailyStatistics[getSearchingDate()].YOUTH++;
                                         break;
                                     }
-                                    case WORK_TYPES::DOCTOR: {
-                                        dailyStatistics[getSearchingDate()].DOCTOR++;
+                                    case AGE::RETIREE: {
+//                                        if (getSearchingDate() == "20191021") {
+//                                            std::cout << "+1 Пенсионер" << std::endl;
+//                                        }
+                                        dailyStatistics[getSearchingDate()].RETIREE++;
                                         break;
                                     }
-                                    case WORK_TYPES::TEACHER: {
-                                        dailyStatistics[getSearchingDate()].TEACHER++;
+                                    case AGE::DISABLED_ADULT: {
+                                        dailyStatistics[getSearchingDate()].DISABLED_ADULT++;
                                         break;
                                     }
-                                    case WORK_TYPES::LAWYER: {
-                                        dailyStatistics[getSearchingDate()].LAWYER++;
+                                    case AGE::DISABLED_BEFORE_14: {
+                                        dailyStatistics[getSearchingDate()].DISABLED_BEFORE_14++;
                                         break;
                                     }
-                                    case WORK_TYPES::SPECIAL_PROF: {
-                                        dailyStatistics[getSearchingDate()].SPECIAL_PROF++;
+                                    case AGE::DISABLED_YOUTH: {
+                                        dailyStatistics[getSearchingDate()].DISABLED_YOUTH++;
                                         break;
                                     }
-                                    case WORK_TYPES::WORKER: {
-                                        dailyStatistics[getSearchingDate()].WORKER++;
+                                    case AGE::HOME_SERVICED_DISABLED: {
+                                        dailyStatistics[getSearchingDate()].HOME_SERVICED_DISABLED++;
                                         break;
                                     }
-                                    case WORK_TYPES::EMPLOYEE: {
-                                        dailyStatistics[getSearchingDate()].EMPLOYEE++;
-                                        break;
-                                    }
-                                    case WORK_TYPES::OTHER: {
-                                        dailyStatistics[getSearchingDate()].OTHER++;
-                                        break;
-                                    }
-                                    case WORK_TYPES::HIGH_EDU: {
-                                        dailyStatistics[getSearchingDate()].HIGH_EDU++;
-                                        break;
-                                    }
-                                    case WORK_TYPES::MIDDLE_EDU: {
-                                        dailyStatistics[getSearchingDate()].MIDDLE_EDU++;
-                                        break;
-                                    }
-                                    case WORK_TYPES::MAIN_EDU: {
-                                        dailyStatistics[getSearchingDate()].MAIN_EDU++;
-                                        break;
-                                    }
-                                    case WORK_TYPES::BEGINNING_EDU: {
-                                        dailyStatistics[getSearchingDate()].BEGINNING_EDU++;
+                                    case AGE::HOME_SERVICED_RETIREE: {
+                                        dailyStatistics[getSearchingDate()].HOME_SERVICED_RETIREE++;
                                         break;
                                     }
                                     default: {
                                         break;
                                     }
                                 }
-
-                                switch (fillUserData(bdOper->getUserRecord()).edu) {
-                                    case EDU::HIGH: {
-                                        dailyStatistics[getSearchingDate()].HIGH++;
-                                        break;
-                                    }
-                                    case EDU::MIDDLE: {
-                                        dailyStatistics[getSearchingDate()].MIDDLE++;
-                                        break;
-                                    }
-                                    case EDU::BEGINNING_PROF: {
-                                        dailyStatistics[getSearchingDate()].BEGINNING_PROF++;
-                                        break;
-                                    }
-                                    case EDU::MAIN_FULL: {
-                                        dailyStatistics[getSearchingDate()].MAIN_FULL++;
-                                        break;
-                                    }
-                                    case EDU::MAIN: {
-                                        dailyStatistics[getSearchingDate()].MAIN++;
-                                        break;
-                                    }
-                                    case EDU::BEGINNING: {
-                                        dailyStatistics[getSearchingDate()].BEGINNING++;
-                                        break;
-                                    }
-                                    case EDU::PRESCHOOL: {
-                                        dailyStatistics[getSearchingDate()].PRESCHOOL++;
-                                        break;
-                                    }
-                                    case EDU::DISTANT: {
-                                        dailyStatistics[getSearchingDate()].DISTANT++;
-                                        break;
-                                    }
-                                    default: {
-                                        break;
-                                    }
-                                }
-
-                                for (auto age: fillUserData(bdOper->getUserRecord()).age) {
-                                    switch (age) {
-                                        case AGE::BEFORE_14: {
-                                            dailyStatistics[getSearchingDate()].BEFORE_14++;
-                                            break;
-                                        }
-                                        case AGE::YOUTH: {
-                                            dailyStatistics[getSearchingDate()].YOUTH++;
-                                            break;
-                                        }
-                                        case AGE::RETIREE: {
-                                            dailyStatistics[getSearchingDate()].RETIREE++;
-                                            break;
-                                        }
-                                        case AGE::DISABLED_ADULT: {
-                                            dailyStatistics[getSearchingDate()].DISABLED_ADULT++;
-                                            break;
-                                        }
-                                        case AGE::DISABLED_BEFORE_14: {
-                                            dailyStatistics[getSearchingDate()].DISABLED_BEFORE_14++;
-                                            break;
-                                        }
-                                        case AGE::DISABLED_YOUTH: {
-                                            dailyStatistics[getSearchingDate()].DISABLED_YOUTH++;
-                                            break;
-                                        }
-                                        case AGE::HOME_SERVICED_DISABLED: {
-                                            dailyStatistics[getSearchingDate()].HOME_SERVICED_DISABLED++;
-                                            break;
-                                        }
-                                        case AGE::HOME_SERVICED_RETIREE: {
-                                            dailyStatistics[getSearchingDate()].HOME_SERVICED_RETIREE++;
-                                            break;
-                                        }
-                                        default: {
-                                            break;
-                                        }
-                                    }
-                                }
+                            }
 //
 //                            if (lastID != id) {
 //                                ids += std::to_string(id) + ",";
 //                                lastID = id;
 //                            }
-                            }
-                        }
-
-                        /**
-                         * Если текущее число меньше первого числа искомого месяца, то переход на следующую запись
-                         */
-                        if (!lastData.hasVariantTOParse) {
-                            break;
                         }
                     }
                     catch (std::out_of_range &e) {
@@ -763,7 +748,7 @@ std::vector<int> dailyStats::prepareIDsForTest_day() {
     int id = 0;
     for (auto record: bdOper->getParsedRecords()) {
         try {
-            if (visitedFilial(record.at(TAGS::VISIT)).lastParsedIndex > 0) {
+            if (visitedFilial(record.at(TAGS::VISIT))) {
                 ids.push_back(id);
             }
         }
@@ -786,39 +771,61 @@ void dailyStats::exportTableFile(const std::string &path) {
             std::cout << "day: " << day << std::endl;
             twExport->setRow(std::atoi(day.c_str()) + 2);
 
-            twExport->putDayStat("Лист1", "B", it.second.ITR);
-            twExport->putDayStat("Лист1", "C", it.second.FINANCE);
-            twExport->putDayStat("Лист1", "D", it.second.DOCTOR);
-            twExport->putDayStat("Лист1", "E", it.second.TEACHER);
-            twExport->putDayStat("Лист1", "F", it.second.LAWYER);
-            twExport->putDayStat("Лист1", "G", it.second.OTHER);
-            twExport->putDayStat("Лист1", "H", it.second.WORKER);
-            twExport->putDayStat("Лист1", "I", it.second.EMPLOYEE);
-//            twExport->putDayStat("Лист1", "J", it.second.OTHER);
-            twExport->putDayStat("Лист1", "K", it.second.HIGH_EDU);
-            twExport->putDayStat("Лист1", "L", it.second.MIDDLE_EDU);
-            twExport->putDayStat("Лист1", "M", it.second.MAIN_EDU);
-            twExport->putDayStat("Лист1", "N", it.second.BEGINNING_EDU);
-            twExport->putDayStat("Лист1", "O", it.second.BEFORE_14);
-            twExport->putDayStat("Лист1", "P", it.second.YOUTH);
-            twExport->putDayStat("Лист1", "Q", it.second.RETIREE);
-            twExport->putDayStat("Лист1", "R", it.second.DISABLED_ADULT);
-            twExport->putDayStat("Лист1", "S", it.second.DISABLED_BEFORE_14);
-            twExport->putDayStat("Лист1", "T", it.second.DISABLED_YOUTH);
-            twExport->putDayStat("Лист1", "U", it.second.HOME_SERVICED_DISABLED);
-            twExport->putDayStat("Лист1", "V", it.second.HOME_SERVICED_RETIREE);
-//            twExport->putDayStat("Лист1", "W", it.second.FINANCE);
-            twExport->putDayStat("Лист1", "X", it.second.HIGH);
-            twExport->putDayStat("Лист1", "Y", it.second.MIDDLE);
-            twExport->putDayStat("Лист1", "Z", it.second.BEGINNING_PROF);
-            twExport->putDayStat("Лист1", "AA", it.second.MAIN_FULL);
-            twExport->putDayStat("Лист1", "AB", it.second.MAIN);
-            twExport->putDayStat("Лист1", "AC", it.second.BEGINNING);
-            twExport->putDayStat("Лист1", "AD", it.second.PRESCHOOL);
-            twExport->putDayStat("Лист1", "AE", it.second.DISTANT);
+            twExport->putDayStat("Sheet1", "B", it.second.ITR);
+            twExport->putDayStat("Sheet1", "C", it.second.FINANCE);
+            twExport->putDayStat("Sheet1", "D", it.second.DOCTOR);
+            twExport->putDayStat("Sheet1", "E", it.second.TEACHER);
+            twExport->putDayStat("Sheet1", "F", it.second.LAWYER);
+            twExport->putDayStat("Sheet1", "G", it.second.OTHER);
+            twExport->putDayStat("Sheet1", "H", it.second.WORKER);
+            twExport->putDayStat("Sheet1", "I", it.second.EMPLOYEE);
+//            twExport->putDayStat("Sheet1", "J", it.second.OTHER);
+            twExport->putDayStat("Sheet1", "K", it.second.HIGH_EDU);
+            twExport->putDayStat("Sheet1", "L", it.second.MIDDLE_EDU);
+            twExport->putDayStat("Sheet1", "M", it.second.MAIN_EDU);
+            twExport->putDayStat("Sheet1", "N", it.second.BEGINNING_EDU);
+            twExport->putDayStat("Sheet1", "O", it.second.BEFORE_14);
+            twExport->putDayStat("Sheet1", "P", it.second.YOUTH);
+            twExport->putDayStat("Sheet1", "Q", it.second.RETIREE);
+            twExport->putDayStat("Sheet1", "R", it.second.DISABLED_ADULT);
+            twExport->putDayStat("Sheet1", "S", it.second.DISABLED_BEFORE_14);
+            twExport->putDayStat("Sheet1", "T", it.second.DISABLED_YOUTH);
+            twExport->putDayStat("Sheet1", "U", it.second.HOME_SERVICED_DISABLED);
+            twExport->putDayStat("Sheet1", "V", it.second.HOME_SERVICED_RETIREE);
+//            twExport->putDayStat("Sheet1", "W", it.second.FINANCE);
+            twExport->putDayStat("Sheet1", "X", it.second.HIGH);
+            twExport->putDayStat("Sheet1", "Y", it.second.MIDDLE);
+            twExport->putDayStat("Sheet1", "Z", it.second.BEGINNING_PROF);
+            twExport->putDayStat("Sheet1", "AA", it.second.MAIN_FULL);
+            twExport->putDayStat("Sheet1", "AB", it.second.MAIN);
+            twExport->putDayStat("Sheet1", "AC", it.second.BEGINNING);
+            twExport->putDayStat("Sheet1", "AD", it.second.PRESCHOOL);
+            twExport->putDayStat("Sheet1", "AE", it.second.DISTANT);
 //            twExport->putDayStat("Лист1", "AF", it.second.FINANCE);
+
+            twExport->putDayStat("Sheet1", "AK", it.second.BEFORE_14);
+            twExport->putDayStat("Sheet1", "AL", it.second.YOUTH);
+            twExport->putDayStat("Sheet1", "AM", it.second.RETIREE);
+            twExport->putDayStat("Sheet1", "AN", it.second.DISABLED_ADULT);
+            twExport->putDayStat("Sheet1", "AO", it.second.DISABLED_BEFORE_14);
+            twExport->putDayStat("Sheet1", "AP", it.second.DISABLED_YOUTH);
+            twExport->putDayStat("Sheet1", "AR", it.second.HOME_SERVICED_DISABLED);
+            twExport->putDayStat("Sheet1", "AS", it.second.HOME_SERVICED_RETIREE);
+
         }
     }
+}
+
+std::vector<std::string> dailyStats::prepareFieldVisitsByMonth(const std::string& month) {
+    std::vector<std::string> allVisits = bdOper->getUserRecord().at(TAGS::VISIT);
+    std::vector<std::string> newVisits = std::vector<std::string>();
+    for (const auto& field: allVisits) {
+        if (parse->yearMonthEqual(month, field)) {
+            newVisits.push_back(field);
+        }
+    }
+
+    return newVisits;
 }
 
 

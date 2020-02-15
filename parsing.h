@@ -54,6 +54,22 @@ public:
 
     std::string getFieldIndexValue(MST::fieldIndexes field, const std::string&);
 
+
+    /**
+     * Сравнение, входит ли искомый месяц+год в текущую дату
+     * @param yearMonth
+     * @param date
+     * @return
+     */
+    bool yearMonthEqual(const std::string& yearMonth, const std::string& date);
+
+    /**
+     * Проверка - сдана ли книга
+     * @param field
+     * @return
+     */
+    bool bookOnHands(const std::string& field);
+
     /**
      * Проверка существования элемента в массиве
      * @return

@@ -23,12 +23,6 @@
 
 class dailyStats {
 public:
-    struct lastFieldDataVisitedFilial {
-        size_t lastParsedIndex = 0;
-        bool hasVariantTOParse = true;
-        bool foundLastIteration = false;
-    };
-
     struct structDailyStat {
         // WORK_TYPES
         size_t ITR = 0;
@@ -124,7 +118,6 @@ public:
 
 
     fileStarter* bdOper;
-    lastFieldDataVisitedFilial lastData;
 
     explicit dailyStats(const std::string& path);
     virtual ~dailyStats();
@@ -165,7 +158,7 @@ public:
      * @param visitField - массив посещений
      * @return lastFieldDataVisitedFilial
      */
-    lastFieldDataVisitedFilial visitedFilial(const std::vector<std::string>& visitField);
+    bool visitedFilial(const std::vector<std::string>& visitField);
 
     /**
      * Заполнение табличного файла данными
@@ -182,6 +175,15 @@ private:
     void fillUserEduTypeList();
     void fillUserAgeTypeList();
     static std::string currentData();
+
+    /**
+     * Подготавливает массив посещений за определенный месяц, чтобы избежать лишних итераций и не упустить поле, идущее
+     * не по порядку.
+     *
+     * @param month
+     * @return
+     */
+    std::vector<std::string> prepareFieldVisitsByMonth(const std::string& month);
 
     std::vector<int> prepareIDsForTest_day();
     std::vector<int> prepareIDsForParsing(WORK_MODE);
